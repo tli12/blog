@@ -1,0 +1,48 @@
+name: test and build flask webapp
+on: [push]
+jobs:
+  # job 1. set up interpreter and install dependencies, run the test
+  Run-Test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+      - name: Test with pytest
+        run: |
+          pip install '.[test]'
+          pytest 
+  # job 2. scan your code with SonarCloud to detects bugs, vulnerabilities and code smells
+  # https://github.com/SonarSource/sonarcloud-github-action
+  # "You are running CI analysis while Automatic Analysis is enabled. Please consider disabling one or the other." 
+  # Solution: Turn off: sonarcloud -> github project -> adminstration -> Analysis Method -> SonarCloud Automatic Analysis
+  # c.f. https://community.sonarsource.com/t/sonarcloud-task-fails-because-of-ci-analysis-and-auto-analysis-running/22937/4
+  Scan-Code-by-SonarCloud:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+      # install SonarCloud: https://github.com/marketplace/actions/sonarcloud-scan
+    - name: SonarCloud Scan
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
+        # Automatic token authentication, Provided by Github. No need to do anything. https://docs.github.com/en/actions/security-guides/automatic-token-authentication
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # First generate a token in SonarCloud account (not project): Security -> Tokens. 
+        # Then in GitHub project, Settings -> Secrets -> actions -> New repository secret: set the SONAR_TOKEN environment variable
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  # job 3: TODO: deploy to docker and Kubernetes
+  Deploy-to-kubernetes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # install docker and kubernetes 
+      - uses: 
+        with:
